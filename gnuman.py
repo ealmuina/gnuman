@@ -1,4 +1,5 @@
 import base64
+import datetime
 import json
 import os
 import pickle
@@ -54,12 +55,18 @@ def send_mail(config):
 
 
 def check_site(config):
-    response = requests.get(STORE_URL)
+    last = []
+
     while True:
-        last = ''.join(response.text.split())
         response = requests.get(STORE_URL)
-        if ''.join(response.text.split()) != last:
+        tree = html.fromstring(response.content)
+        products = tree.xpath('//span[@class="productTitle"]/text()')
+
+        if last and products != last:
             send_mail(config)
+
+        print(datetime.datetime.now())
+        last = products
         pause.days(1)
 
 
