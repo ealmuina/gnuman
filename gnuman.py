@@ -17,8 +17,14 @@ from googleapiclient.discovery import build
 STORE_URL = 'https://garynuman.tmstor.es/index.php?page=products&section=all&lf=454634a53a858c8c610454594289f92a'
 SCOPES = ['https://www.googleapis.com/auth/gmail.send']
 
+# Enable logging
+logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+                    level=logging.INFO)
 
-def send_mail(config):
+logger = logging.getLogger(__name__)
+
+
+def send_mail(config, removed, added):
     creds = None
     # The file token.pickle stores the user's access and refresh tokens, and is
     # created automatically when the authorization flow completes for the first
@@ -40,7 +46,20 @@ def send_mail(config):
 
     service = build('gmail', 'v1', credentials=creds)
 
-    message = MIMEText(STORE_URL)
+    message = ''
+    if removed:
+        message += "Productos eliminados:\n"
+        for p in removed:
+            message += f'- {p}\n'
+        message += '\n'
+    if added:
+        message += 'Productos añadidos:\n'
+        for p in added:
+            message += f'- {p}\n'
+        message += '\n'
+    message += STORE_URL
+
+    message = MIMEText(message)
     message['to'] = config['to_addr']
     message['from'] = config['from_addr']
     message['subject'] = 'Cambios en la tienda de Gary Numan!!!'
@@ -49,9 +68,9 @@ def send_mail(config):
     try:
         message = (service.users().messages().send(userId='me', body=message)
                    .execute())
-        print('Message Id: %s' % message['id'])
+        logger.info('Message Id: %s' % message['id'])
     except errors.HttpError as error:
-        print('An error occurred: %s' % error)
+        logger.error('An error occurred: %s' % error)
 
 
 def check_site(config):
@@ -63,9 +82,9 @@ def check_site(config):
         products = tree.xpath('//span[@class="productTitle"]/text()')
 
         if last and products != last:
-            send_mail(config)
+            send_mail(config, set(last) - set(products), set(products) - set(last))
 
-        print(datetime.datetime.now())
+        logger.info('Check made')
         last = products
         pause.days(1)
 
