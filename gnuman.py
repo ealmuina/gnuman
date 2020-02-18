@@ -19,8 +19,11 @@ STORE_URL = 'https://garynuman.tmstor.es/index.php?page=products&section=all&lf=
 SCOPES = ['https://www.googleapis.com/auth/gmail.send']
 
 # Enable logging
-logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-                    level=logging.INFO)
+logging.basicConfig(
+    filename='log.txt',
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    level=logging.INFO
+)
 
 logger = logging.getLogger(__name__)
 
