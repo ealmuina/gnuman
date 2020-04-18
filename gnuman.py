@@ -1,5 +1,4 @@
 import logging
-
 import base64
 import json
 import os
@@ -8,7 +7,6 @@ import pickle
 from email.mime.text import MIMEText
 
 from lxml import html
-import pause
 import requests
 from google.auth.transport.requests import Request
 from google_auth_oauthlib.flow import InstalledAppFlow
@@ -78,19 +76,23 @@ def send_mail(config, removed, added):
 
 
 def check_site(config):
-    last = []
+    if os.path.exists('last.pickle'):
+        with open('last.pickle', 'rb') as file:
+            last = pickle.load(file)
+    else:
+        last = []
 
-    while True:
-        response = requests.get(STORE_URL)
-        tree = html.fromstring(response.content)
-        products = tree.xpath('//span[@class="productTitle"]/text()')
+    response = requests.get(STORE_URL)
+    tree = html.fromstring(response.content)
+    products = tree.xpath('//span[@class="productTitle"]/text()')
 
-        if last and products != last:
-            send_mail(config, set(last) - set(products), set(products) - set(last))
+    if last and products != last:
+        send_mail(config, set(last) - set(products), set(products) - set(last))
 
-        logger.info('Check made')
-        last = products
-        pause.days(1)
+    logger.info('Check made')
+
+    with open('last.pickle', 'wb') as file:
+        pickle.dump(products, file)
 
 
 def main():
